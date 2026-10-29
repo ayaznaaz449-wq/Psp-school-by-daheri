@@ -1,0 +1,128 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function activeUser() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.active == true;
+    }
+
+    function role() {
+      return activeUser()
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
+        : '';
+    }
+
+    function isAdmin() {
+      return role() in ['superAdmin', 'admin'];
+    }
+
+    function isPrincipalOrAdmin() {
+      return role() in ['superAdmin', 'principal', 'admin'];
+    }
+
+    match /users/{uid} {
+      allow read: if activeUser()
+        && (request.auth.uid == uid || isAdmin() || role() == 'principal');
+
+      allow write: if false;
+    }
+
+    match /students/{id} {
+      allow read: if activeUser()
+        && role() in ['superAdmin', 'principal', 'admin', 'teacher'];
+
+      allow create: if isPrincipalOrAdmin()
+        && request.resource.data.name is string
+        && request.resource.data.roll is string
+        && request.resource.data.className is string;
+
+      allow update: if isPrincipalOrAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /staff/{id} {
+      allow read, create, update: if isPrincipalOrAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /classes/{id} {
+      allow read: if activeUser();
+      allow write: if isPrincipalOrAdmin();
+    }
+
+    match /attendance/{id} {
+      allow read: if activeUser()
+        && role() in ['superAdmin', 'principal', 'admin', 'teacher'];
+
+      allow create, update: if activeUser()
+        && role() in ['superAdmin', 'principal', 'admin', 'teacher'];
+
+      allow delete: if isPrincipalOrAdmin();
+    }
+
+    match /examinations/{id} {
+      allow read: if activeUser();
+      allow write: if activeUser()
+        && role() in ['superAdmin', 'principal', 'admin', 'teacher'];
+    }
+
+    match /results/{id} {
+      allow read: if activeUser()
+        && role() in ['superAdmin', 'principal', 'admin', 'teacher'];
+
+      allow create, update: if activeUser()
+        && role() in ['superAdmin', 'principal', 'admin', 'teacher'];
+
+      allow delete: if isPrincipalOrAdmin();
+    }
+
+    match /fees/{id} {
+      allow read, create, update: if activeUser()
+        && role() in ['superAdmin', 'principal', 'admin', 'accountant'];
+
+      allow delete: if isAdmin();
+    }
+
+    match /payments/{id} {
+      allow read, create, update: if activeUser()
+        && role() in ['superAdmin', 'principal', 'admin', 'accountant'];
+
+      allow delete: if isAdmin();
+    }
+
+    match /timetable/{id} {
+      allow read: if activeUser();
+      allow write: if activeUser()
+        && role() in ['superAdmin', 'principal', 'admin', 'teacher'];
+    }
+
+    match /assignments/{id} {
+      allow read: if activeUser();
+      allow write: if activeUser()
+        && role() in ['superAdmin', 'principal', 'admin', 'teacher'];
+    }
+
+    match /announcements/{id} {
+      allow read: if activeUser()
+        || resource.data.public == true;
+
+      allow create, update, delete: if isPrincipalOrAdmin();
+    }
+
+    match /auditLogs/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
