@@ -70,7 +70,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, getDoc, collection, addDoc, getDocs, query, orderBy, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, doc, getDoc, collection, addDoc, getDocs, query, where, orderBy, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /* Firebase web config is intended to be public. Security must be enforced by Auth + Firestore Rules. */
 const firebaseConfig = {
@@ -115,7 +115,7 @@ async function loadHomework(){const body=$('#homeworkRows');if(!currentUser){bod
 $('#saveHomework').onclick=async()=>{if(!currentUser||!['superAdmin','principal','admin','teacher'].includes(currentRole)){toast('You do not have assignment access.');return}const className=$('#hwClass').value.trim(),subject=$('#hwSubject').value.trim(),dueDate=$('#hwDue').value,title=$('#hwTitle').value.trim(),instructions=$('#hwInstructions').value.trim();if(!className||!subject||!title||!instructions){toast('Fill class, subject, title and instructions.');return}try{await addDoc(collection(db,'assignments'),{className,subject,dueDate,title,instructions,createdAt:serverTimestamp(),createdBy:currentUser.uid});$('#hwTitle').value='';$('#hwInstructions').value='';toast('Assignment published.');await loadHomework()}catch(e){toast('Could not publish assignment. Check Firestore Rules.')}}
 $('#refreshHomework').onclick=loadHomework;
 async function loadAnnouncements(){
- try{const snap=await getDocs(query(collection(db,'announcements'),orderBy('createdAt','desc')));const publicItems=snap.docs.map(d=>d.data()).filter(a=>a.public===true);$('#publicAnnouncements').innerHTML=publicItems.length?publicItems.map(a=>'<p>'+esc(a.message)+'</p>').join(''):'No public announcements are configured yet.'}
+ try{const snap=await getDocs(query(collection(db,'announcements'),where('public','==',true),orderBy('createdAt','desc')));const publicItems=snap.docs.map(d=>d.data());$('#publicAnnouncements').innerHTML=publicItems.length?publicItems.map(a=>'<p>'+esc(a.message)+'</p>').join(''):'No public announcements are configured yet.'}
  catch(e){/* Public area remains safe if announcements are unavailable. */}
 }
 $('#menuBtn').onclick=()=>$('#sidebar').classList.toggle('open');
