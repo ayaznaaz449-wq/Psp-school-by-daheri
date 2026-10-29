@@ -87,19 +87,6 @@ service cloud.firestore {
       allow delete: if isPrincipal();
     }
 
-    match /fees/{id} {
-      allow read, create, update: if activeUser()
-        && role() in ['superAdmin', 'principal', 'admin', 'accountant'];
-
-      allow delete: if isAdmin();
-    }
-
-    match /payments/{id} {
-      allow read, create, update: if activeUser()
-        && role() in ['superAdmin', 'principal', 'admin', 'accountant'];
-
-      allow delete: if isAdmin();
-    }
 
     match /timetable/{id} {
       allow read: if activeUser();
