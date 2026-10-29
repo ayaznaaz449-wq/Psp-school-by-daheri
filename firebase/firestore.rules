@@ -23,6 +23,10 @@ service cloud.firestore {
       return role() in ['superAdmin', 'admin'];
     }
 
+    function isPrincipal() {
+      return role() in ['superAdmin', 'principal'];
+    }
+
     function isPrincipalOrAdmin() {
       return role() in ['superAdmin', 'principal', 'admin'];
     }
@@ -44,17 +48,17 @@ service cloud.firestore {
         && request.resource.data.className is string;
 
       allow update: if isPrincipalOrAdmin();
-      allow delete: if isAdmin();
+      allow delete: if isPrincipal();
     }
 
     match /staff/{id} {
-      allow read, create, update: if isPrincipalOrAdmin();
-      allow delete: if isAdmin();
+      allow read, create, update: if isPrincipal();
+      allow delete: if isPrincipal();
     }
 
     match /classes/{id} {
       allow read: if activeUser();
-      allow write: if isPrincipalOrAdmin();
+      allow write: if isPrincipal();
     }
 
     match /attendance/{id} {
@@ -64,7 +68,7 @@ service cloud.firestore {
       allow create, update: if activeUser()
         && role() in ['superAdmin', 'principal', 'admin', 'teacher'];
 
-      allow delete: if isPrincipalOrAdmin();
+      allow delete: if isPrincipal();
     }
 
     match /examinations/{id} {
@@ -80,7 +84,7 @@ service cloud.firestore {
       allow create, update: if activeUser()
         && role() in ['superAdmin', 'principal', 'admin', 'teacher'];
 
-      allow delete: if isPrincipalOrAdmin();
+      allow delete: if isPrincipal();
     }
 
     match /fees/{id} {
@@ -113,11 +117,11 @@ service cloud.firestore {
       allow read: if activeUser()
         || resource.data.public == true;
 
-      allow create, update, delete: if isPrincipalOrAdmin();
+      allow create, update, delete: if isPrincipal();
     }
 
     match /auditLogs/{id} {
-      allow read: if isAdmin();
+      allow read: if isPrincipal();
       allow write: if false;
     }
 
